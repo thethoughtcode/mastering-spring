@@ -15,13 +15,13 @@ public class AuthenticationFailureListener implements ApplicationListener<Authen
     private HttpServletRequest request;
 
     @Autowired
-    private ClientIpExtractor clientIpExtractor;
+    private HttpRequestHelper requestHelper;
 
     @Autowired
     private LoginAttemptService loginAttemptService;
 
     @Override
     public void onApplicationEvent(final AuthenticationFailureBadCredentialsEvent event) {
-        loginAttemptService.loginFailed(clientIpExtractor.getClientIP(request));
+        loginAttemptService.loginFailed(requestHelper.getClientIP(request));
     }
 }

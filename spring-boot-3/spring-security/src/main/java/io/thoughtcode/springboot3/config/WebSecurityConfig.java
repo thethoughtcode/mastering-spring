@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -19,8 +20,12 @@ public class WebSecurityConfig {
 
     // @formatter:off
     private static final String[] PUBLIC_PATHS = {
+            "/resources/**",
             "/login*",
-            "/logout*"
+            "/logout*",
+            "/registration*",
+            "/success_register*",
+            "/api/user/registration*"
     };
     // @formatter:on
 
@@ -40,13 +45,19 @@ public class WebSecurityConfig {
     private RememberMeServices rememberMeServices;
 
     @Bean
+    WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers("/h2/**");
+    }
+
+    @Bean
     SecurityFilterChain configure(final HttpSecurity http) throws Exception {
         // @formatter:off
         return http
                 .csrf(request -> request.disable())
-                .authorizeHttpRequests(requests ->
-                    requests
+                .authorizeHttpRequests(request ->
+                    request
                         .requestMatchers(PUBLIC_PATHS).permitAll()
+                        .requestMatchers("/invalid_session*").anonymous()
                         .anyRequest().authenticated()
                 )
                 .formLogin(requests ->
@@ -62,7 +73,8 @@ public class WebSecurityConfig {
                         .invalidSessionUrl("/invalid_session.html")
                         .maximumSessions(1)
                         .sessionRegistry(sessionRegistry)
-                        // sessionFixation.none
+                        .and()
+                        .sessionFixation().none()
                 )
                 .logout(request ->
                     request

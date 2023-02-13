@@ -41,4 +41,11 @@ public class UserLocation {
         this.user = user;
         this.enabled = false;
     }
+
+    public UserLocation(final String country, final User user, final boolean enabled) {
+        super();
+        this.country = country;
+        this.user = user;
+        this.enabled = enabled;
+    }
 }

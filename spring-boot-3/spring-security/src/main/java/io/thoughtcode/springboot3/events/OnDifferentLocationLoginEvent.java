@@ -1,4 +1,4 @@
-package io.thoughtcode.springboot3.config.geoip2;
+package io.thoughtcode.springboot3.events;
 
 import java.util.Locale;
 

@@ -24,17 +24,17 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private final LoginAttemptService loginAttemptService;
 
-    private final ClientIpExtractor clientIpExtractor;
+    private final HttpRequestHelper requestHelper;
 
     // @formatter:off
     CustomAuthenticationFailureHandler(final MessageSource messages,
                                        final LocaleResolver localeResolver,
                                        final LoginAttemptService loginAttemptService,
-                                       final ClientIpExtractor clientIpExtractor) {
+                                       final HttpRequestHelper requestHelper) {
         this.messages = messages;
         this.localeResolver = localeResolver;
         this.loginAttemptService = loginAttemptService;
-        this.clientIpExtractor = clientIpExtractor;
+        this.requestHelper = requestHelper;
     }
     // @formatter:on
 
@@ -47,7 +47,7 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
         super.onAuthenticationFailure(request, response, exception);
 
         final Locale locale = localeResolver.resolveLocale(request);
-        final String ip = clientIpExtractor.getClientIP(request);
+        final String ip = requestHelper.getClientIP(request);
 
         String errorMessage = messages.getMessage("message.badCredentials", null, locale);
 

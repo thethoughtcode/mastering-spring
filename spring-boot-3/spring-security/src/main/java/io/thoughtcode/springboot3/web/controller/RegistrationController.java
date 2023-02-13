@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import io.thoughtcode.springboot3.config.auth.HttpRequestHelper;
 import io.thoughtcode.springboot3.service.UserSecurityService;
 import io.thoughtcode.springboot3.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,14 +26,18 @@ public class RegistrationController {
 
     private final UserSecurityService userSecurityService;
 
+    private final HttpRequestHelper requestHelper;
+
     private final MessageSource messages;
 
     // @formatter:off
     RegistrationController(final UserService userService,
                            final UserSecurityService userSecurityService,
+                           final HttpRequestHelper requestHelper,
                            final MessageSource messages) {
         this.userService = userService;
         this.userSecurityService = userSecurityService;
+        this.requestHelper = requestHelper;
         this.messages = messages;
     }
 

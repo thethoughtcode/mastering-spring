@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Component
-public class ClientIpExtractor {
+public class HttpRequestHelper {
 
     public String getClientIP(final HttpServletRequest request) {
 
@@ -16,5 +16,9 @@ public class ClientIpExtractor {
         }
 
         return xfHeader.split(",")[0];
+    }
+
+    public String getAppUrl(final HttpServletRequest request) {
+        return "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
     }
 }

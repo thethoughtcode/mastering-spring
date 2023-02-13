@@ -8,8 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.stereotype.Component;
 
-import io.thoughtcode.springboot3.config.geoip2.OnDifferentLocationLoginEvent;
 import io.thoughtcode.springboot3.entity.NewLocationToken;
+import io.thoughtcode.springboot3.events.OnDifferentLocationLoginEvent;
 import io.thoughtcode.springboot3.service.UserService;
 import io.thoughtcode.springboot3.web.error.UnusualLocationException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,12 +29,12 @@ public class DifferentLocationChecker implements UserDetailsChecker {
     private ApplicationEventPublisher eventBus;
 
     @Autowired
-    private ClientIpExtractor clientIpExtractor;
+    private HttpRequestHelper requestHelper;
 
     @Override
     public void check(final UserDetails userDetails) {
 
-        final String ip = clientIpExtractor.getClientIP(request);
+        final String ip = requestHelper.getClientIP(request);
 
         LOG.info("Request Object -> {} | Ip - {}", request, ip);
 
@@ -42,11 +42,7 @@ public class DifferentLocationChecker implements UserDetailsChecker {
 
         if (token != null) {
 
-            final String serverName = request.getServerName();
-            final int serverPort = request.getServerPort();
-            final String serverContextPath = request.getContextPath();
-
-            final String appUrl = String.format("http://%s:%s%s", serverName, serverPort, serverContextPath);
+            final String appUrl = requestHelper.getAppUrl(request);
 
             eventBus.publishEvent(new OnDifferentLocationLoginEvent(request.getLocale(), userDetails.getUsername(), ip, token, appUrl));
 
