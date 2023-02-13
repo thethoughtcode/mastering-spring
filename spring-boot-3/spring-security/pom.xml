@@ -26,6 +26,7 @@
         <aerogear.version>1.0.0</aerogear.version>
         <geoip2.version>4.0.0</geoip2.version>
         <uap-java.version>1.5.3</uap-java.version>
+        <guava.version>31.1-jre</guava.version>
     </properties>
 
     <dependencies>
@@ -87,6 +88,13 @@
             <groupId>com.github.ua-parser</groupId>
             <artifactId>uap-java</artifactId>
             <version>${uap-java.version}</version>
+        </dependency>
+
+        <!-- Google Guava -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
 
         <!-- Testing Dependencies -->

@@ -28,10 +28,13 @@ public class DifferentLocationChecker implements UserDetailsChecker {
     @Autowired
     private ApplicationEventPublisher eventBus;
 
+    @Autowired
+    private ClientIpExtractor clientIpExtractor;
+
     @Override
     public void check(final UserDetails userDetails) {
 
-        final String ip = getClientIP();
+        final String ip = clientIpExtractor.getClientIP(request);
 
         LOG.info("Request Object -> {} | Ip - {}", request, ip);
 
@@ -49,16 +52,5 @@ public class DifferentLocationChecker implements UserDetailsChecker {
 
             throw new UnusualLocationException("unusual location");
         }
-    }
-
-    private String getClientIP() {
-
-        final String xfHeader = request.getHeader("X-Forwarded-For");
-
-        if (xfHeader == null || xfHeader.isEmpty() || !xfHeader.contains(request.getRemoteAddr())) {
-            return request.getRemoteAddr();
-        }
-
-        return xfHeader.split(",")[0];
     }
 }

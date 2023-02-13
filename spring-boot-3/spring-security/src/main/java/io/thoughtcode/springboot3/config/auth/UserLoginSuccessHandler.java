@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Configuration
-public class LoginSuccessHandler implements AuthenticationSuccessHandler {
+public class UserLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private static final int SESSION_TIMEOUT = 30 * 60; // 30 minutes
     private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -28,7 +28,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final ActiveUserStore activeUserStore;
 
-    public LoginSuccessHandler(final ActiveUserStore activeUserStore) {
+    public UserLoginSuccessHandler(final ActiveUserStore activeUserStore) {
         this.activeUserStore = activeUserStore;
     }
 
