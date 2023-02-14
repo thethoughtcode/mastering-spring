@@ -3,7 +3,7 @@ package io.thoughtcode.springboot3.service;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 
-import java.net.InetAddress;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,7 +12,6 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,8 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.maxmind.geoip2.DatabaseReader;
-
+import io.thoughtcode.springboot3.entity.DeviceMetadata;
 import io.thoughtcode.springboot3.entity.NewLocationToken;
 import io.thoughtcode.springboot3.entity.Privilege;
 import io.thoughtcode.springboot3.entity.Role;
@@ -44,7 +42,11 @@ public class UserService implements UserDetailsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
 
-    private final Environment env;
+    public static final String TOKEN_INVALID = "invalidToken";
+
+    public static final String TOKEN_EXPIRED = "expired";
+
+    public static final String TOKEN_VALID = "valid";
 
     private final UserRepository repository;
 
@@ -56,27 +58,25 @@ public class UserService implements UserDetailsService {
 
     private final VerificationTokenRepository verificationTokenRepository;
 
+    private final DeviceMetadataService deviceMetadataService;
+
     private final PasswordEncoder passwordEncoder;
 
-    private final DatabaseReader geoipReader;
-
     // @formatter:off
-    UserService(final Environment env,
-                final UserRepository repository,
+    UserService(final UserRepository repository,
                 final RoleRepository roleRepository,
                 final UserLocationRepository userLocationRepository,
                 final NewLocationTokenRepository newLocationTokenRepository,
                 final VerificationTokenRepository verificationTokenRepository,
-                final PasswordEncoder passwordEncoder,
-                final DatabaseReader geoipReader) {
-        this.env = env;
+                final DeviceMetadataService deviceMetadataService,
+                final PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.userLocationRepository = userLocationRepository;
         this.newLocationTokenRepository = newLocationTokenRepository;
         this.verificationTokenRepository = verificationTokenRepository;
+        this.deviceMetadataService = deviceMetadataService;
         this.passwordEncoder = passwordEncoder;
-        this.geoipReader = geoipReader;
     }
     // @formatter:on
 
@@ -99,6 +99,13 @@ public class UserService implements UserDetailsService {
 
     private boolean emailExists(final String email) {
         return repository.findByEmail(email).isPresent();
+    }
+
+    public User getUser(final String verificationToken) {
+
+        final Optional<VerificationToken> token = verificationTokenRepository.findByToken(verificationToken);
+
+        return token.isPresent() ? token.get().getUser() : null;
     }
 
     @Override
@@ -151,11 +158,11 @@ public class UserService implements UserDetailsService {
 
     public NewLocationToken isNewLoginLocation(final String username, final String ip) {
 
-        if (!isGeoIpLibEnabled()) {
+        if (!deviceMetadataService.isGeoIpLibEnabled()) {
             return null;
         }
 
-        final String country = getIpLocationCountry(ip);
+        final String country = deviceMetadataService.getIpLocationCountry(ip);
 
         LOG.info("=======================**** Country - {}", country);
 
@@ -163,16 +170,16 @@ public class UserService implements UserDetailsService {
 
         final Optional<UserLocation> location = userLocationRepository.findByCountryAndUser(country, user);
 
-        return location.isPresent() ? createNewLocationToken(country, user) : null;
+        return location.isEmpty() || !location.get().isEnabled() ? createNewLocationToken(country, user) : null;
     }
 
     public void addUserLocation(final User user, String ip) {
 
-        if (!isGeoIpLibEnabled()) {
+        if (!deviceMetadataService.isGeoIpLibEnabled()) {
             return;
         }
 
-        final String country = getIpLocationCountry(ip);
+        final String country = deviceMetadataService.getIpLocationCountry(ip);
         userLocationRepository.save(new UserLocation(country, user, true));
     }
 
@@ -180,12 +187,32 @@ public class UserService implements UserDetailsService {
         verificationTokenRepository.save(new VerificationToken(token, user));
     }
 
-    private String getIpLocationCountry(final String ip) {
-        try {
-            return geoipReader.country(InetAddress.getByName(ip)).getCountry().getName();
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+    public String validateVerificationToken(final String token, final String ip, final String deviceDetails) {
+
+        final Optional<VerificationToken> verificationTokenEntry = verificationTokenRepository.findByToken(token);
+
+        if (verificationTokenEntry.isEmpty()) {
+            return TOKEN_INVALID;
         }
+
+        final VerificationToken verificationToken = verificationTokenEntry.get();
+
+        if (verificationToken.getExpiryDate().isBefore(OffsetDateTime.now())) {
+            verificationTokenRepository.delete(verificationToken);
+            return TOKEN_EXPIRED;
+        }
+
+        final User user = verificationToken.getUser();
+        user.setEnabled(true);
+
+        repository.save(user);
+
+        final DeviceMetadata device = deviceMetadataService.addDevice(user, ip, deviceDetails);
+
+        LOG.info("User - {}", user);
+        LOG.info("Device - {}", device);
+
+        return TOKEN_VALID;
     }
 
     private NewLocationToken createNewLocationToken(final String country, User user) {
@@ -193,7 +220,8 @@ public class UserService implements UserDetailsService {
         return newLocationTokenRepository.save(new NewLocationToken(randomUUID().toString(), userLocation));
     }
 
-    private boolean isGeoIpLibEnabled() {
-        return Boolean.parseBoolean(env.getProperty("geo.ip.lib.enabled"));
+    public Object generateQRUrl(final User user) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

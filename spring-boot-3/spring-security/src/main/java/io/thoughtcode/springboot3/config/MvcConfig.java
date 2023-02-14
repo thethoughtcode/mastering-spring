@@ -22,6 +22,8 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addViewController("/invalid_session.html");
         registry.addViewController("/registration.html");
         registry.addViewController("/success_register.html");
+        registry.addViewController("/qrcode.html");
+        registry.addViewController("/qrcode.html");
     }
 
     @Override

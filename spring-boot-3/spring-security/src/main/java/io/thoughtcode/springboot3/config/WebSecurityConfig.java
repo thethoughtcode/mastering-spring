@@ -25,7 +25,11 @@ public class WebSecurityConfig {
             "/logout*",
             "/registration*",
             "/success_register*",
-            "/api/user/registration*"
+            "/registrationConfirm*",
+            "/bad_user*",
+            "/qrcode*",
+            "/api/user/registration*",
+            "/h2/**"
     };
     // @formatter:on
 
